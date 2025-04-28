@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  bigdata:
+    build: .
+    container_name: bigdata-container
+    ports:
+      - "8888:8888"
+      - "9092:9092"
+      - "2181:2181"
+      - "9870:9870"
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+      - HADOOP_HOME=/opt/hadoop
+      - SPARK_HOME=/opt/spark
+      - KAFKA_HOME=/opt/kafka
+      - PATH=/opt/hadoop/bin:/opt/hadoop/sbin:/opt/spark/bin:/opt/spark/sbin:/opt/kafka/bin:$PATH
+    volumes:
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+    command: >
+      bash -c "
+        /opt/hadoop/bin/hdfs namenode -format &&
+        /opt/hadoop/sbin/start-dfs.sh &&
+        /opt/hadoop/sbin/start-yarn.sh &&
+        /opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties &
+        sleep 5 &&
+        /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties &
+        jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --NotebookApp.token='' --NotebookApp.password=''
+      "
