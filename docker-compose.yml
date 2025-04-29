@@ -4,26 +4,37 @@ services:
   bigdata:
     build: .
     container_name: bigdata-container
+    hostname: namenode
     ports:
-      - "8888:8888"
-      - "9092:9092"
-      - "2181:2181"
-      - "9870:9870"
+      - "22:22"         # SSH
+      - "8888:8888"     # Jupyter Notebook
+      - "9870:9870"     # Hadoop NameNode UI
+      - "8088:8088"     # YARN ResourceManager
+      - "8042:8042"     # YARN NodeManager
+      - "19888:19888"   # MapReduce JobHistory
+      - "9092:9092"     # Kafka
+      - "2181:2181"     # Zookeeper
     environment:
       - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
       - HADOOP_HOME=/opt/hadoop
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
       - SPARK_HOME=/opt/spark
       - KAFKA_HOME=/opt/kafka
-      - PATH=/opt/hadoop/bin:/opt/hadoop/sbin:/opt/spark/bin:/opt/spark/sbin:/opt/kafka/bin:$PATH
+      - HDFS_NAMENODE_USER=root
+      - HDFS_DATANODE_USER=root
+      - HDFS_SECONDARYNAMENODE_USER=root
+      - YARN_RESOURCEMANAGER_USER=root
+      - YARN_NODEMANAGER_USER=root
     volumes:
-      - ./config/hadoop:/opt/hadoop/etc/hadoop
-    command: >
-      bash -c "
-        /opt/hadoop/bin/hdfs namenode -format &&
-        /opt/hadoop/sbin/start-dfs.sh &&
-        /opt/hadoop/sbin/start-yarn.sh &&
-        /opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties &
-        sleep 5 &&
-        /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties &
-        jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --NotebookApp.token='' --NotebookApp.password=''
-      "
+      - hadoop_data:/opt/hadoop_data
+      - ./config/kafka:/opt/kafka/config
+      - ./notebooks:/notebooks
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  hadoop_data:
