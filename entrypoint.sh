@@ -1,21 +1,16 @@
 #!/bin/bash
 set -e
 
-# Load Java environment
+# Load environment
 source /etc/profile.d/java.sh
 
-# Export Hadoop and Kafka paths
+# Export paths
 export HADOOP_HOME=/opt/hadoop
+export SPARK_HOME=/opt/spark
 export KAFKA_HOME=/opt/kafka
-export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$KAFKA_HOME/bin
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$SPARK_HOME/bin:$KAFKA_HOME/bin
 
-# Debugging: Show PATH
-echo "PATH = $PATH"
-echo "JAVA_HOME = $JAVA_HOME"
-echo "HADOOP_HOME = $HADOOP_HOME"
-echo "KAFKA_HOME = $KAFKA_HOME"
-
-# Start SSH service
+# Start SSH
 echo "Starting SSH service..."
 /usr/sbin/sshd
 
@@ -29,34 +24,47 @@ if [ ! -f ~/.ssh/id_rsa ]; then
 fi
 
 # Configure SSH known hosts
-mkdir -p ~/.ssh
-echo -e "Host localhost\n   StrictHostKeyChecking no\nHost namenode\n   StrictHostKeyChecking no" >> ~/.ssh/config
+echo -e "Host localhost\n   StrictHostKeyChecking no\nHost bigdata\n   StrictHostKeyChecking no" >> ~/.ssh/config
 chmod 600 ~/.ssh/config
 
-# Format Hadoop filesystem if needed
+# Format HDFS if needed
 if [ ! -d /opt/hadoop_data/hdfs/namenode/current ]; then
   echo "Formatting NameNode..."
   hdfs namenode -format -force -nonInteractive
 fi
 
-# Start Hadoop services
-echo "Starting HDFS (NameNode and DataNode)..."
+# Start Hadoop
+echo "Starting HDFS..."
 $HADOOP_HOME/sbin/start-dfs.sh
-
 echo "Starting YARN..."
 $HADOOP_HOME/sbin/start-yarn.sh
-
-echo "Starting MapReduce HistoryServer..."
+echo "Starting HistoryServer..."
 $HADOOP_HOME/bin/mapred --daemon start historyserver
 
-# Start ZooKeeper and Kafka
+# Configure Kafka
+echo "Configuring Kafka..."
+echo "listeners=PLAINTEXT://0.0.0.0:9092" >> $KAFKA_HOME/config/server.properties
+echo "advertised.listeners=PLAINTEXT://bigdata:9092" >> $KAFKA_HOME/config/server.properties
+echo "listener.security.protocol.map=PLAINTEXT:PLAINTEXT" >> $KAFKA_HOME/config/server.properties
+
+# Start ZooKeeper
 echo "Starting ZooKeeper..."
 $KAFKA_HOME/bin/zookeeper-server-start.sh -daemon $KAFKA_HOME/config/zookeeper.properties
-
 sleep 5
 
-echo "Starting Kafka broker..."
+# Start Kafka
+echo "Starting Kafka..."
 $KAFKA_HOME/bin/kafka-server-start.sh -daemon $KAFKA_HOME/config/server.properties
+sleep 15  # Give Kafka time to start
+
+# Create test topic
+echo "Creating Kafka topic..."
+$KAFKA_HOME/bin/kafka-topics.sh --create \
+    --if-not-exists \
+    --topic test-topic \
+    --bootstrap-server localhost:9092 \
+    --partitions 1 \
+    --replication-factor 1
 
 # Start Jupyter Notebook
 echo "Starting Jupyter Notebook..."
@@ -70,5 +78,9 @@ jupyter notebook \
   --notebook-dir=/notebooks \
   --no-browser &
 
-# Keep container alive
+# Set proper permissions for Spark
+mkdir -p /opt/spark/work-dir
+chmod 777 /opt/spark/work-dir
+
+# Keep container running
 tail -f /dev/null
