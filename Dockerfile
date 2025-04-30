@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash coreutils procps openjdk-11-jdk python3 python3-pip wget curl git \
     net-tools iputils-ping nano gnupg lsb-release openssh-client openssh-server \
-    supervisor sudo sshpass \
+    supervisor sudo sshpass netcat \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Java environment variables
@@ -48,15 +48,58 @@ RUN wget -q https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-$
     mv spark-${SPARK_VERSION}-bin-hadoop3 $SPARK_HOME && \
     rm spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
-# Install Kafka
-ENV KAFKA_VERSION=3.7.2
+    # Fix temp directory permissions for Spark
+RUN mkdir -p /tmp/spark-events && \
+chmod 777 /tmp && \
+chmod 777 /tmp/spark-events && \
+mkdir -p /tmp/checkpoint && \
+chmod 777 /tmp/checkpoint
+
+
+# Download all required Kafka integration JARs
+# Download all required JARs with retries and verification
+RUN mkdir -p $SPARK_HOME/jars && \
+    for jar in \
+      "https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/${SPARK_VERSION}/spark-sql-kafka-0-10_2.12-${SPARK_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.4.1/kafka-clients-3.4.1.jar" \
+      "https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_2.12/${SPARK_VERSION}/spark-token-provider-kafka-0-10_2.12-${SPARK_VERSION}.jar" \
+      "https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar" \
+      "https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.18/scala-library-2.12.18.jar" \
+      "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-client-api/3.3.4/hadoop-client-api-3.3.4.jar" \
+      "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-client-runtime/3.3.4/hadoop-client-runtime-3.3.4.jar"; \
+    do \
+      for i in {1..3}; do \
+        if wget -q --tries=3 --timeout=30 "$jar" -P $SPARK_HOME/jars/ && [ -s $SPARK_HOME/jars/$(basename "$jar") ]; then \
+          break; \
+        elif [ $i -eq 3 ]; then \
+          echo "Failed to download $jar after 3 attempts"; \
+          exit 1; \
+        else \
+          echo "Retrying download of $jar..."; \
+          sleep 5; \
+        fi; \
+      done; \
+    done
+
+# Install Kafka with multiple download options
+ENV KAFKA_VERSION=3.6.2
 ENV KAFKA_HOME=/opt/kafka
 ENV PATH=$KAFKA_HOME/bin:$PATH
 
-RUN wget -q https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_2.13-${KAFKA_VERSION}.tgz && \
+RUN set -e; \
+    # Try primary download source first
+    (wget -q https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_2.13-${KAFKA_VERSION}.tgz || \
+    # Fallback to archive if primary fails
+    wget -q https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/kafka_2.13-${KAFKA_VERSION}.tgz) && \
+    # Verify download
+    { [ -f kafka_2.13-${KAFKA_VERSION}.tgz ] || { echo "All download attempts failed"; exit 1; }; } && \
+    # Extract and install
     tar -xzf kafka_2.13-${KAFKA_VERSION}.tgz && \
     mv kafka_2.13-${KAFKA_VERSION} $KAFKA_HOME && \
-    rm kafka_2.13-${KAFKA_VERSION}.tgz
+    rm kafka_2.13-${KAFKA_VERSION}.tgz && \
+    mkdir -p $KAFKA_HOME/logs && \
+    # Basic version check (skip if in CI environment)
+    if [ -z "$CI" ]; then $KAFKA_HOME/bin/kafka-topics.sh --version; fi
 
 # Install Python libraries
 COPY requirements.txt /tmp/requirements.txt
@@ -79,6 +122,15 @@ RUN mkdir /var/run/sshd && \
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+
+# Copy Kafka config
+COPY config/kafka/ $KAFKA_HOME/config/
+
+# Configure PySpark temp directory
+ENV PYSPARK_PYTHON=/usr/bin/python3
+ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
+RUN mkdir -p /opt/spark/work-dir && \
+    chmod 777 /opt/spark/work-dir
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh

@@ -6,20 +6,25 @@ services:
     container_name: bigdata-container
     hostname: namenode
     ports:
-      - "22:22"         # SSH
-      - "8888:8888"     # Jupyter Notebook
-      - "9870:9870"     # Hadoop NameNode UI
-      - "8088:8088"     # YARN ResourceManager
-      - "8042:8042"     # YARN NodeManager
-      - "19888:19888"   # MapReduce JobHistory
-      - "9092:9092"     # Kafka
-      - "2181:2181"     # Zookeeper
+      - "22:22"
+      - "8888:8888"
+      - "9870:9870"
+      - "8088:8088"
+      - "8042:8042"
+      - "19888:19888"
+      - "9092:9092"
+      - "2181:2181"
     environment:
       - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
       - HADOOP_HOME=/opt/hadoop
       - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
       - SPARK_HOME=/opt/spark
       - KAFKA_HOME=/opt/kafka
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://namenode:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_ZOOKEEPER_CONNECT=localhost:2181
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
       - HDFS_NAMENODE_USER=root
       - HDFS_DATANODE_USER=root
       - HDFS_SECONDARYNAMENODE_USER=root
@@ -27,7 +32,6 @@ services:
       - YARN_NODEMANAGER_USER=root
     volumes:
       - hadoop_data:/opt/hadoop_data
-      - ./config/kafka:/opt/kafka/config
       - ./notebooks:/notebooks
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9870"]
