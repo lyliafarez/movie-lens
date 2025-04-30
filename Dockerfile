@@ -38,24 +38,33 @@ log4j.appender.console.layout.ConversionPattern=%d{ISO8601} %-5p %c{2}:%L - %m%n
 log4j.logger.org.apache.hadoop.util.NativeCodeLoader=ERROR" > $HADOOP_CONF_DIR/log4j.properties
 
 # Install Spark
+# Install Spark
 ENV SPARK_VERSION=3.5.1
 ENV SPARK_HOME=/opt/spark
 ENV PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$PATH
 
+# Download and extract Spark
 RUN wget -q https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz && \
     tar -xzf spark-${SPARK_VERSION}-bin-hadoop3.tgz && \
     mv spark-${SPARK_VERSION}-bin-hadoop3 $SPARK_HOME && \
     rm spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
-# Install Kafka
+# Download all required Kafka integration JARs
+RUN wget -q https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/${SPARK_VERSION}/spark-sql-kafka-0-10_2.12-${SPARK_VERSION}.jar -P $SPARK_HOME/jars/ && \
+    wget -q https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.7.2/kafka-clients-3.7.2.jar -P $SPARK_HOME/jars/ && \
+    wget -q https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_2.12/${SPARK_VERSION}/spark-token-provider-kafka-0-10_2.12-${SPARK_VERSION}.jar -P $SPARK_HOME/jars/ && \
+    wget -q https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.12.0/commons-pool2-2.12.0.jar -P $SPARK_HOME/jars/ && \
+    wget -q https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.18/scala-library-2.12.18.jar -P $SPARK_HOME/jars/
+    
+# Install Kafka (using 2.12 version for compatibility)
 ENV KAFKA_VERSION=3.7.2
 ENV KAFKA_HOME=/opt/kafka
 ENV PATH=$KAFKA_HOME/bin:$PATH
 
-RUN wget -q https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_2.13-${KAFKA_VERSION}.tgz && \
-    tar -xzf kafka_2.13-${KAFKA_VERSION}.tgz && \
-    mv kafka_2.13-${KAFKA_VERSION} $KAFKA_HOME && \
-    rm kafka_2.13-${KAFKA_VERSION}.tgz
+RUN wget -q https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_2.12-${KAFKA_VERSION}.tgz && \
+    tar -xzf kafka_2.12-${KAFKA_VERSION}.tgz && \
+    mv kafka_2.12-${KAFKA_VERSION} $KAFKA_HOME && \
+    rm kafka_2.12-${KAFKA_VERSION}.tgz
 
 # Install Python libraries
 COPY requirements.txt /tmp/requirements.txt

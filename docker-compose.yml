@@ -25,6 +25,8 @@ services:
       - HDFS_SECONDARYNAMENODE_USER=root
       - YARN_RESOURCEMANAGER_USER=root
       - YARN_NODEMANAGER_USER=root
+      - KAFKA_ADVERTISED_LISTENERS = PLAINTEXT://bigdata:9092
+      - KAFKA_LISTENERS = PLAINTEXT://0.0.0.0:9092
     volumes:
       - hadoop_data:/opt/hadoop_data
       - ./config/kafka:/opt/kafka/config
