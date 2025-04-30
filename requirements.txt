@@ -1,3 +1,4 @@
 pyspark==3.5.1
+py4j==0.10.9.7
 jupyter
 kafka-python
