@@ -6,7 +6,7 @@ services:
     container_name: bigdata-container
     hostname: namenode
     ports:
-      - "22:22"         # SSH
+      - "2222:2222"         # SSH
       - "8888:8888"     # Jupyter Notebook
       - "9870:9870"     # Hadoop NameNode UI
       - "8088:8088"     # YARN ResourceManager
@@ -15,7 +15,7 @@ services:
       - "9092:9092"     # Kafka
       - "2181:2181"     # Zookeeper
     environment:
-      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
       - HADOOP_HOME=/opt/hadoop
       - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
       - SPARK_HOME=/opt/spark
