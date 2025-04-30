@@ -2,6 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# cmooit modifications
 # Install essential packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash coreutils procps openjdk-11-jdk python3 python3-pip wget curl git \
