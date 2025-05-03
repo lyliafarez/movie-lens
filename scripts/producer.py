@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class RatingProducer:
-    def __init__(self, bootstrap_servers='kafka:9092', topic='movie_rating'):
+    def __init__(self, bootstrap_servers='namenode:9092', topic='movie_rating'):
         self.topic = topic
         self.bootstrap_servers = bootstrap_servers
         self.producer = None
@@ -124,7 +124,7 @@ def wait_for_kafka(bootstrap_servers, timeout=60):
 def main():
     try:
         # Wait for Kafka to be ready
-        kafka_servers = 'kafka:9092'
+        kafka_servers = 'namenode:9092'
         wait_for_kafka(kafka_servers)
         
         # Initialize and run producer

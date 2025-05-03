@@ -66,6 +66,14 @@ $KAFKA_HOME/bin/kafka-topics.sh --create \
     --partitions 1 \
     --replication-factor 1
 
+# Start producer and consumer
+echo "Starting Kafka producer and consumer..."
+python3 /opt/scripts/producer.py &
+python3 /opt/scripts/consumer.py &
+
+# Start Jupyter Notebook
+echo "Starting Jupyter Notebook..."
+
 # Start Jupyter Notebook
 echo "Starting Jupyter Notebook..."
 mkdir -p /notebooks

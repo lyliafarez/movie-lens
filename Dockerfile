@@ -130,6 +130,9 @@ ENV PYSPARK_PYTHON=/usr/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
 RUN mkdir -p /opt/spark/work-dir && \
     chmod 777 /opt/spark/work-dir
+# Copy your scripts
+COPY /scripts/consumer.py /opt/scripts/consumer.py
+COPY /scripts/producer.py /opt/scripts/producer.py
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
