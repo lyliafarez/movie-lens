@@ -68,6 +68,38 @@ try:
             width=600
         )
         st.altair_chart(hist_chart)
+        
+        # === Bloc Top 5 des genres préférés ===
+        genre_ratings = []
+        for r in user_ratings:
+            genres_str = movies_data.get(r["movieId"], {}).get("genres", "")
+            genres = genres_str.split("|")
+            for genre in genres:
+                genre_ratings.append({"Genre": genre, "Note": r["rating"]})
+        genre_df = pd.DataFrame(genre_ratings)
+
+        # Calcul de la note moyenne par genre
+        top_genres = genre_df.groupby("Genre").agg(
+            note_moyenne=("Note", "mean"),
+            nb_films=("Note", "count")
+        ).reset_index()
+
+        # Filtrer les évaluations sur au moins 3 films, tri et prise en compte des 5 meilleurs
+        top_genres = top_genres[top_genres["nb_films"] >= 3]
+        top_genres = top_genres.sort_values("note_moyenne", ascending=False).head(5)
+
+        # Afficher le graphique
+        genre_chart = alt.Chart(top_genres).mark_bar().encode(
+            x=alt.X("Genre", sort="-y", title="Genre"),
+            y=alt.Y("note_moyenne", title="Note moyenne"),
+            color=alt.Color("note_moyenne", scale=alt.Scale(scheme="blues")),
+            tooltip=["Genre", "note_moyenne", "nb_films"]
+        ).properties(
+            title="Top 5 des genres préférés de l'utilisateur",
+            width=600,
+            height=300
+        )
+        st.altair_chart(genre_chart)
 
         # === Bloc Recommandations ===
         rec_db = client["movie_lens"]
