@@ -55,7 +55,7 @@ class RatingProducer:
     def generate_rating(self):
         """Generate a random movie rating"""
         return {
-            'userId': random.randint(1,1000),
+            'userId': random.randint(1,10),
             'movieId': random.randint(1, 26744),
             'rating': round(random.uniform(0.5, 5.0), 1),
             'timestamp': int(time.time())

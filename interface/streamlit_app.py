@@ -109,7 +109,7 @@ try:
         top_recs = list(
             rec_collection.find({"userId": selected_user})
             .sort("rating", -1)
-            .limit(3)
+            .limit(5)
         )
 
         if top_recs:

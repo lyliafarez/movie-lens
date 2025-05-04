@@ -71,7 +71,7 @@ def generate_recommendations(model, user_ids_df):
         ).select(
             "userId",
             F.col("recommendation.movieId").alias("movieId"),
-            F.col("recommendation.rating").alias("predictedRating")
+            F.col("recommendation.rating").alias("rating")
         )
         
         logger.info(f"Generated {exploded_recs.count()} total recommendations")
