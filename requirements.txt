@@ -5,3 +5,6 @@ kafka-python
 numpy
 matplotlib 
 seaborn
+streamlit
+pandas
+pymongo

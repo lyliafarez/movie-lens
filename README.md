@@ -22,16 +22,23 @@ Link: https://excalidraw.com/#json=dtKT3FanGHM-1_wcIcS1s,Ea4JTPaOXIxLnHOOJOv6rw
 |-- docker-compose.yml
 |-- Makefile
 |-- requirements.txt
+|-- entrypoint.sh
 |-- config/
 |   |-- hadoop/
 |       |-- core-site.xml
 |       |-- hdfs-site.xml
 |       |-- mapred-site.xml
 |       |-- yarn-site.xml
+|       |-- hadoop-env.sh
 |-- notebooks/
-|   |-- spark_kafka_demo.ipynb
+|   |-- data_exploration_processing.ipynb
+|   |-- spark_kafka_consumer.py
+|   |-- kafka_producer.py
+|   |-- ALS.py
 |-- scripts/
-    |-- spark_batch_csv_count.py
+    |-- consumer.py
+    |-- producer.py
+    |-- hdfs_initialization.sh
 ```
 
 ## 🔄 Quick Start
@@ -65,10 +72,17 @@ make down
 ```bash
 make clean
 ```
+## 🚀 Run Streamlit App
+```bash
+streamlit run streamlit_app.py 
+```
+(http://localhost:8501)
 
 ## 📄 Notebooks & Scripts
-- **spark_kafka_demo.ipynb** : Connects Spark Structured Streaming to a Kafka topic and displays the streamed data.
-- **spark_batch_csv_count.py** : A simple Spark batch job reading a CSV file from HDFS and counting rows.
+- **data_exploration_processing.ipynb**: Interactive Jupyter notebook for exploring data and processing pipelines using Spark and Kafka.
+- **spark_kafka_consumer.py**: Spark Structured Streaming consumer that reads from a Kafka topic and processes the streaming data.
+- **kafka_producer.py**: Script that produces messages to a Kafka topic from a local CSV file.
+- **ALS.py**: Python script implementing a collaborative filtering recommendation system using the Alternating Least Squares (ALS) algorithm in Apache Spark. The script performs data cleaning, enrichment, model training, evaluation, and generates movie recommendations based on user ratings.
 
 ## 🔔 Notes
 - Hadoop HDFS Web UI: [http://localhost:9870](http://localhost:9870)
@@ -81,7 +95,12 @@ make clean
   hdfs dfs -mkdir -p /datasets
   hdfs dfs -put your_file.csv /datasets/
   ```
+## 📋 Project Management
+Track tasks and project progress on Trello: https://trello.com/b/ko0kNgex/basic-board
 
----
+## 📊 Architecture
+![alt text](image.png)
 
-Made with ❤️ by Marie
+## 📸 App preview
+![alt text](image-1.png)
+![alt text](image-2.png)
