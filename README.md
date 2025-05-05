@@ -9,6 +9,7 @@ This project provides a ready-to-use Dockerized environment to work with:
 - **Jupyter Notebook**
 
 ## 📊 Architecture
+Link: https://excalidraw.com/#json=dtKT3FanGHM-1_wcIcS1s,Ea4JTPaOXIxLnHOOJOv6rw
 - Hadoop HDFS for distributed file storage (single-node setup)
 - Spark for batch and streaming data processing
 - Kafka for streaming ingestion
